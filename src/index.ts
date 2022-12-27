@@ -1,36 +1,18 @@
 import { Client, LocalAuth } from "whatsapp-web.js";
-import qrcode from "qrcode-terminal";
 
-import ChatAIHandler from "./utils/chat_ai";
-import EditPhotoHandler from "./utils/edit_foto";
+import puppeteerOptions from "./configs/puppeteer";
+import qrListener from "./listeners/qr";
+import readyListener from "./listeners/ready";
+import messageListener from "./listeners/message";
 
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(),
+    puppeteer:
+        process.env.NODE_ENV === 'production' ? puppeteerOptions : undefined,
 });
 
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true })
-})
-
-client.on('ready', () => {
-    console.log("ready");
-})
-
-client.on('message', async(msg) => {
-    const text = msg.body.toLowerCase() || '';
-
-    //check status
-    if (text === '!ping') {
-        msg.reply('pong');
-    }
-
-    // edit_bg/bg_color
-    if (text.includes("#edit_bg/")) {
-        await EditPhotoHandler(text, msg);
-    }
-    // #ask/question?
-    if (text.includes("#ask/")) {
-        await ChatAIHandler(text, msg);
-    }});
+client.on('qr', qrListener);
+client.on('ready', readyListener);
+client.on('message', messageListener);
 
 client.initialize()
